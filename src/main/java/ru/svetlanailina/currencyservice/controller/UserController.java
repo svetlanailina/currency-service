@@ -38,14 +38,12 @@ public class UserController {
     }
 
     @PutMapping("/{userId}/contact")
-    @PreAuthorize("hasRole('ROLE_USER')")
     public ResponseEntity<User> updateContact(@PathVariable Long userId, @Valid @RequestBody UserContactDto dto) {
         User user = userService.updateUserContact(userId, dto.getEmail(), dto.getPhone());
         return ResponseEntity.ok(user);
     }
 
     @PostMapping("/{fromUserId}/transfer/{toUserId}")
-    @PreAuthorize("hasRole('ROLE_USER')")
     public ResponseEntity<Void> transfer(@PathVariable Long fromUserId, @PathVariable Long toUserId, @RequestParam Double amount) {
         userService.transferFunds(fromUserId, toUserId, amount);
         return ResponseEntity.ok().build();
@@ -53,7 +51,6 @@ public class UserController {
 
     // Метод поиска пользователей с фильтрацией и пагинацией
     @GetMapping("/search")
-    @PreAuthorize("hasRole('ROLE_USER')")
     public ResponseEntity<List<User>> searchUsers(
             @RequestParam(required = false) String fullName,
             @RequestParam(required = false) String email,

@@ -1,6 +1,13 @@
 package ru.svetlanailina.currencyservice.service;
 
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.CriteriaQuery;
+import jakarta.persistence.criteria.Root;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -15,6 +22,7 @@ import ru.svetlanailina.currencyservice.util.DateUtils;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Predicate;
 
 @Service
 public class UserService {
@@ -22,6 +30,9 @@ public class UserService {
     private final UserRepository userRepository;
     private final BankAccountRepository bankAccountRepository;
     private final PasswordEncoder passwordEncoder;
+
+    @PersistenceContext
+    private EntityManager entityManager;
 
     @Autowired
     public UserService(UserRepository userRepository, BankAccountRepository bankAccountRepository, PasswordEncoder passwordEncoder) {
@@ -103,10 +114,37 @@ public class UserService {
     }
 
     public List<User> searchUsers(String fullName, String email, String phone, LocalDate birthDate, int page, int size) {
-        // Реализация поиска пользователей с фильтрацией и пагинацией
-        // Это может включать использование Spring Data JPA Specification или Criteria API
-        // для создания динамических запросов к базе данных
-        return new ArrayList<>();
+        CriteriaBuilder cb = entityManager.getCriteriaBuilder();
+        CriteriaQuery<User> query = cb.createQuery(User.class);
+        Root<User> user = query.from(User.class);
+
+        List<jakarta.persistence.criteria.Predicate> predicates = new ArrayList<>();
+
+        if (fullName != null && !fullName.isEmpty()) {
+            predicates.add(cb.like(cb.lower(user.get("fullName")), "%" + fullName.toLowerCase() + "%"));
+        }
+
+        if (email != null && !email.isEmpty()) {
+            predicates.add(cb.like(cb.lower(user.get("email")), "%" + email.toLowerCase() + "%"));
+        }
+
+        if (phone != null && !phone.isEmpty()) {
+            predicates.add(cb.like(cb.lower(user.get("phone")), "%" + phone.toLowerCase() + "%"));
+        }
+
+        if (birthDate != null) {
+            predicates.add(cb.equal(user.get("birthDate"), birthDate));
+        }
+
+        query.where(predicates.toArray(new jakarta.persistence.criteria.Predicate[0]));
+
+        Pageable pageable = PageRequest.of(page, size);
+        List<User> resultList = entityManager.createQuery(query)
+                .setFirstResult((int) pageable.getOffset())
+                .setMaxResults(pageable.getPageSize())
+                .getResultList();
+
+        return resultList;
     }
 }
 
