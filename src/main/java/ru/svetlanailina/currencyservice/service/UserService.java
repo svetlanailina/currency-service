@@ -133,7 +133,7 @@ public class UserService {
         }
 
         if (birthDate != null) {
-            predicates.add(cb.equal(user.get("birthDate"), birthDate));
+            predicates.add(cb.greaterThan(user.get("birthDate"), birthDate));
         }
 
         query.where(predicates.toArray(new jakarta.persistence.criteria.Predicate[0]));
