@@ -8,6 +8,7 @@ import java.util.Optional;
 
 @Repository
 public interface UserRepository extends JpaRepository<User, Long> {
+    //Методы для проверки уникальности: логин, телефон и email не должны быть заняты
     Optional<User> findByUsername(String username);
 
     Optional<User> findByEmail(String email);

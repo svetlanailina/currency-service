@@ -1,5 +1,7 @@
 package ru.svetlanailina.currencyservice.controller;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -15,6 +17,7 @@ import ru.svetlanailina.currencyservice.dto.AuthRequestDto;
 import ru.svetlanailina.currencyservice.dto.AuthResponseDto;
 import ru.svetlanailina.currencyservice.security.JwtTokenProvider;
 
+@Tag(name = "Auth Controller", description = "Auth API for user operations")
 @RestController
 @RequestMapping("/api/auth")
 public class AuthController {
@@ -24,6 +27,7 @@ public class AuthController {
     @Autowired
     private JwtTokenProvider jwtTokenProvider;
 
+    @Operation(summary = "Login a user")
     @PostMapping("/login")
     public ResponseEntity<AuthResponseDto> login(@Valid @RequestBody AuthRequestDto authRequestDto) {
         Authentication authentication = authenticationManager.authenticate(
