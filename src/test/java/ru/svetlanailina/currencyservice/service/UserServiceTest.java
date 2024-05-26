@@ -6,35 +6,29 @@ import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.mock.web.MockHttpSession;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.test.context.support.WithMockUser;
-import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
-import ru.svetlanailina.currencyservice.dto.UserRegistrationDto;
+import org.springframework.test.web.servlet.MockMvc;
 import ru.svetlanailina.currencyservice.entity.BankAccount;
 import ru.svetlanailina.currencyservice.entity.User;
-import ru.svetlanailina.currencyservice.exception.CustomException;
-import ru.svetlanailina.currencyservice.repository.BankAccountRepository;
 import ru.svetlanailina.currencyservice.repository.UserRepository;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import ru.svetlanailina.currencyservice.dto.UserRegistrationDto;
-import org.springframework.security.authentication.TestingAuthenticationToken;
-import org.springframework.security.core.userdetails.UserDetails;
 
 
 import java.time.LocalDate;
-import java.util.Collections;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
 
 @SpringBootTest
+@AutoConfigureMockMvc(addFilters = false)
 class UserServiceTest {
     @Mock
     private UserRepository userRepository;
@@ -44,6 +38,11 @@ class UserServiceTest {
 
     private User senderUser;
     private User receiverUser;
+    private Authentication authenticationMock;
+
+
+    @Autowired
+    private MockMvc mockMvc;
 
     @BeforeEach
     public void setup() {
@@ -83,10 +82,12 @@ class UserServiceTest {
         receiverUser.setBankAccount(receiverAccount);
 
 
-        // Устанавливаем текущего аутентифицированного пользователя
-        UsernamePasswordAuthenticationToken principal =
-                new UsernamePasswordAuthenticationToken(senderUser.getUsername(), senderUser.getPassword());
-        SecurityContextHolder.getContext().setAuthentication(principal);
+        // Создание мок объекта аутентификации
+        authenticationMock = mock(Authentication.class);
+        when(authenticationMock.getName()).thenReturn(senderUser.getUsername());
+
+        // Устанавливаем мок объект аутентификации в контекст безопасности
+        SecurityContextHolder.getContext().setAuthentication(authenticationMock);
 
 
         // Устанавливаем мок объекты для userRepository
@@ -102,7 +103,11 @@ class UserServiceTest {
 
 
     @Test
-    public void testTransferFunds() {
+    @WithMockUser(username = "senderUser", password = "senderPassword", roles = "USER")
+    public void testTransferFunds() throws Exception {
+        mockMvc.perform(get("/transfer"))
+                .andExpect(status().isOk());
+
         // Вызываем метод transferFunds с мок объектами
         assertDoesNotThrow(() -> userService.transferFunds(receiverUser.getId(), 200.0), "Exception should not be thrown");
 
